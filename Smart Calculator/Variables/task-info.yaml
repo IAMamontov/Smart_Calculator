@@ -1,0 +1,103 @@
+type: edu
+custom_name: stage6
+files:
+- name: tests.py
+  visible: false
+  text: |
+    from hstest.stage_test import *
+    from hstest.test_case import TestCase
+
+    CheckResult.correct = lambda: CheckResult(True, '')
+    CheckResult.wrong = lambda feedback: CheckResult(False, feedback)
+
+
+    class CalcTest(StageTest):
+        def generate(self) -> List[TestCase]:
+            cases = {"n = 3\nm=4\na =   5\nb = a\nn\nm\na\nb\ncount = 10\ncount\n/exit": "3\n4\n5\n5\n10\nBye!",
+                     "4 + 6 - 8\n\n\n2 - 3 - 4\n\n8 + 7 - 4\n/exit": "2\n-5\n11\nBye!",
+                     "a = 3\nb = 4\nc = 5\na + b - c\nb - c + 4 - a\na = 800\na + b + c\n/exit": "2\n0\n809\nBye!",
+                     "/command\n/exit": "Unknown command\nBye!",
+                     "a = 1\na = 2\na = 3\na\n/exit": "3\nBye!",
+                     "q\nr\nq = 10\nr = 20\nq\nr\nR\n/exit": "Unknown variable\nUnknown variable\n10\n20\nUnknown variable\nBye!",
+                     "a1 = 8\nn = a2a\na = 7 = 8\nnum = 10\n/exit": "Invalid identifier\nInvalid assignment\nInvalid assignment\nBye!"}
+            return [TestCase(stdin=case,
+                             attach=cases[case])
+                    for case in cases]
+
+        def check(self, reply: str, attach) -> CheckResult:
+            return CheckResult(reply.strip() == attach.strip(), "")
+
+
+    if __name__ == '__main__':
+        CalcTest("calculator.calculator").run_tests()
+  learner_created: false
+- name: calculator/calculator.py
+  visible: true
+  text: |-
+    # write your code here
+    def log_help():
+        helpstring = "The program calculates the sum of numbers"
+        print(helpstring)
+    def bye_exit():
+        print("Bye!")
+        exit(0)
+    def reduce_operator(rough_str):
+        for si in range(len(rough_str)):
+            cp, cm = 0, 0
+            for c in rough_str[si]:
+                if c == "-":
+                    cm += 1
+                elif c == "+":
+                    cp += 1
+                else:
+                    cp = 0
+                    cm = 0
+                    break
+            if cm % 2 == 1:
+                rough_str[si] = "-"
+            elif cm > 0 and cm % 2 == 0 or cp > 0:
+                rough_str[si] = "+"
+        return rough_str
+
+    def extract_command(substr):
+        if substr[1:] == "help":
+            log_help()
+        elif substr[1:] == "exit":
+            bye_exit()
+        else:
+            print("Unknown command")
+
+    while True:
+        str_in = input().split()
+        str_in = reduce_operator(str_in)
+        #print(str_in)
+        if len(str_in) > 2:
+            s = int(str_in[0])
+            for i in range(2, len(str_in), 2):
+                if str_in[i - 1] == "-":
+                    s -= int(str_in[i])
+                elif str_in[i - 1] == "+":
+                    s += int(str_in[i])
+                else:
+                    print("Invalid expression")
+                    break
+            print(s)
+            continue
+        elif len(str_in) == 2:
+            print("Invalid expression")
+        elif len(str_in) == 1:
+            if str_in[0][0] == "/":
+                extract_command(str_in[0])
+                continue
+            else:
+                try:
+                    print(int(str_in[0]))
+                except ValueError:
+                    print("Invalid expression")
+                continue
+        elif len(str_in) == 0:
+            continue
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/74/stages/414/implement
+status: Solved
+record: 6

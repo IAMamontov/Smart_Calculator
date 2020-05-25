@@ -1,0 +1,185 @@
+type: edu
+custom_name: stage7
+files:
+- name: tests.py
+  visible: false
+  text: |
+    from hstest.stage_test import *
+    from hstest.test_case import TestCase
+
+    CheckResult.correct = lambda: CheckResult(True, '')
+    CheckResult.wrong = lambda feedback: CheckResult(False, feedback)
+
+
+    class CalcTest(StageTest):
+        def generate(self) -> List[TestCase]:
+            cases = {"4 + 6 - 8\n\n\n2 - 3 - 4\n\n8 + 7 - 4\n1 +++ 2 * 3 -- 4\n/exit": "2\n-5\n11\n11\nBye!",
+                     "/command\n/exit": "Unknown command\nBye!",
+                     "3 + 8 * ((4 + 3) * 2 + 1) - 6 / (2 + 1)\n/exit": "121\nBye!",
+                     "8 * 3 + 12 * (4 - 2)\n4 * (2 + 3\n4 + 3)\n/exit": "48\nInvalid expression\nInvalid expression\nBye!",
+                     "a = 4\nb = 5\nc = 6\na*2+b*3+c*(2+3)\n/exit": "53\nBye!",
+                     "a = 1\na = 2\na = 3\na\n/exit": "3\nBye!"}
+            return [TestCase(stdin=case,
+                             attach=cases[case])
+                    for case in cases]
+
+        def check(self, reply: str, attach) -> CheckResult:
+            return CheckResult(reply.strip() == attach.strip(), "")
+
+
+    if __name__ == '__main__':
+        CalcTest("calculator.calculator").run_tests()
+  learner_created: false
+- name: calculator/calculator.py
+  visible: true
+  text: |
+    # write your code here
+    variables = {}
+    def log_help():
+        helpstring = "The program calculates the sum of numbers"
+        print(helpstring)
+    def bye_exit():
+        print("Bye!")
+        exit(0)
+    def reduce_operator(rough_str):
+        for n_word in range(len(rough_str)):
+            c_plus, c_minus, = 0, 0
+            for char in rough_str[n_word]:
+                if char == "-":
+                    c_minus += 1
+                elif char == "+":
+                    c_plus += 1
+                else:
+                    c_plus = 0
+                    c_minus = 0
+                    break
+            if c_minus % 2 == 1:
+                rough_str[n_word] = "-"
+            elif c_minus > 0 and c_minus % 2 == 0 or c_plus > 0:
+                rough_str[n_word] = "+"
+        return rough_str
+
+    def separate_eql(str_in):
+        new_str = []
+        for i in range(len(str_in)):
+            if str_in[i].partition("=")[1] == "=":
+                for word in str_in[i].partition("="):
+                    if word != '':
+                        new_str.append(word)
+            else:
+                new_str.append(str_in[i])
+        return list(new_str)
+
+    def operartion(str_in):
+        if len(str_in) > 2:
+            s = int(str_in[0])
+            for i in range(2, len(str_in), 2):
+                if str_in[i - 1] == "-":
+                    s -= int(str_in[i])
+                elif str_in[i - 1] == "+":
+                    s += int(str_in[i])
+                else:
+                    print("Invalid expression")
+                    break
+            print(s)
+
+    def isoperator(word):
+        return word == "+" or word == "-"
+
+    def substitute_vars(str_in):
+        for i in range(len(str_in)):
+            if str_in[i].isdecimal():
+                continue
+            elif str_in[i].isalpha():
+                if str_in[i] in variables:
+                    str_in[i] = variables[str_in[i]]
+                else:
+                    print("Unknown variable")
+                    return ""
+            elif isoperator(str_in[i]):
+                continue
+            elif str_in[i] == "=":
+                print("Invalid assignment")
+            else:
+                print("Invalid identifier")
+                return ""
+        return str_in
+
+
+    def assignment(str_in):
+        if len(str_in) > 3:
+            print("Invalid assignment")
+            return
+        for word in str_in[2:]:
+            if word == "=":
+                print("Invalid assignment")
+                return
+        if not str_in[0].isalpha():
+            print("Invalid identifier")
+        else:
+            if str_in[2].isdecimal():
+                variables[str_in[0]] = str_in[2]
+            elif str_in[2].isalpha():
+                if str_in[2] not in variables:
+                    print("Unknown variable")
+                else:
+                    variables[str_in[0]] = variables[str_in[2]]
+            else:
+                print("Invalid assignment")
+
+
+    def extract_command(substr):
+        if substr[1:] == "help":
+            log_help()
+        elif substr[1:] == "exit":
+            bye_exit()
+        else:
+            print("Unknown command")
+
+    while True:
+        str_in = input().split()
+        # print(str_in)
+        str_in = reduce_operator(str_in)
+        # print(str_in)
+        str_in = separate_eql(str_in)
+        # print(str_in)
+        if len(str_in) == 0:
+            continue
+        if str(str_in[0][0]) == "/":
+            extract_command(str_in[0])
+            continue
+        if len(str_in) > 1 and str_in[1] == "=":
+            assignment(str_in)
+            continue
+        else:
+            str_in = substitute_vars(str_in)
+        if len(str_in) == 1:
+            if str_in[0].isalpha():
+                if str_in[0] in variables:
+                    print(variables[str_in[0]])
+                else:
+                    print("Unknown variable")
+                continue
+            elif str_in[0].isdecimal():
+                print(int(str_in[0]))
+                continue
+            else:
+                print("Invalid expression")
+                continue
+        elif len(str_in) == 2:
+            print("Invalid expression")
+        if len(str_in) > 2:
+            s = int(str_in[0])
+            for i in range(2, len(str_in), 2):
+                if str_in[i - 1] == "-":
+                    s -= int(str_in[i])
+                elif str_in[i - 1] == "+":
+                    s += int(str_in[i])
+                else:
+                    print("Invalid expression")
+                    break
+            print(s)
+  learner_created: true
+feedback_link: https://hyperskill.org/projects/74/stages/415/implement
+status: Solved
+record: -1
